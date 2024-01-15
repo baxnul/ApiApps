@@ -2,6 +2,7 @@ from flask import Flask, session, Response, request, jsonify
 from DB import get_usr_list, get_db_connection
 from ML import find_most_similar_question
 from datetime import timedelta
+import hashlib
 
 app = Flask(__name__)
 app.secret_key = "\2\1thisismyscretkey\1\2\e\y\y\h"
@@ -35,11 +36,11 @@ def registration() -> Response:
         print(inputted_json)
         new_user_login = inputted_json['login']
         psw = inputted_json['psw']
-
+        hashed_password = hashlib.sha256(psw.encode('utf-8')).hexdigest()
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("INSERT INTO users_1 (username, passw, active) VALUES (%s, %s, True)",
-                    (str(new_user_login), str(psw)))  # hashed_password
+                    (str(new_user_login), str(hashed_password)))  # hashed_password
         conn.commit()
         cur.close()
         conn.close()
@@ -58,7 +59,8 @@ def login() -> Response:
         for usr in users_db:  # в user_db пользователи из БД (словарь)
             # print("usr", usr)
             # print(list(usr['password']).join[2:-1], password)
-            if usr['login'] == users_inp and usr['password'] == password:
+            hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()  # шифруем пароль в sha-256
+            if usr['login'] == users_inp and usr['password'] == hashed_password:
                 print('Пароль верный')
                 session.permanent = True
                 session["user"] = users_inp
